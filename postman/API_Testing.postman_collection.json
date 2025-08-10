@@ -1,576 +1,603 @@
 {
-  "info": {
-    "_postman_id": "2e24f68c-c42c-477b-8218-c919fc02b94e",
-    "name": "API Testing",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "28922640"
-  },
-  "item": [
-    {
-      "name": "/users",
-      "item": [
-        {
-          "name": "Get all users",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const jsonData = pm.response.json();\r",
-                  "\r",
-                  "// 1. Kiểm tra status code\r",
-                  "pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
-                  "    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
-                  "});\r",
-                  "\r",
-                  "// 2. Kiểm tra message nếu có\r",
-                  "if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
-                  "    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
-                  "        let msg = jsonData.message || jsonData.error;\r",
-                  "        pm.expect(msg).to.eql(data.expectedMessage);\r",
-                  "    });\r",
-                  "}\r",
-                  "\r",
-                  "// 3. Kiểm tra pagination metadata nếu checkPagination = true\r",
-                  "if (data.checkPagination === true) {\r",
-                  "    pm.test(`[${data.testCaseId}] Has pagination metadata`, function () {\r",
-                  "        pm.expect(jsonData).to.have.property(\"current_page\");\r",
-                  "        pm.expect(jsonData).to.have.property(\"last_page\");\r",
-                  "        pm.expect(jsonData).to.have.property(\"per_page\");\r",
-                  "        pm.expect(jsonData).to.have.property(\"total\");\r",
-                  "        pm.expect(jsonData).to.have.property(\"data\").that.is.an(\"array\");\r",
-                  "    });\r",
-                  "}\r",
-                  "\r",
-                  "// 4. Kiểm tra data array nếu checkDataArray = true/false\r",
-                  "if (data.checkDataArray === true) {\r",
-                  "    pm.test(`[${data.testCaseId}] Data array exist`, function () {\r",
-                  "        pm.expect(jsonData.data.length).to.be.greaterThanOrEqual(0);\r",
-                  "    });\r",
-                  "} \r",
-                  "\r",
-                  "// 5. Nếu data không rỗng → check schema cho từng user\r",
-                  "if (Array.isArray(jsonData.data) && jsonData.data.length > 0) {\r",
-                  "    const userSchema = {\r",
-                  "        type: 'object',\r",
-                  "        properties: {\r",
-                  "            id: { type: 'integer' },\r",
-                  "            first_name: { type: 'string' },\r",
-                  "            last_name: { type: 'string' },\r",
-                  "            address: { type: 'string' },\r",
-                  "            city: { type: 'string' },\r",
-                  "            state: { type: ['string', 'null'] },\r",
-                  "            country: { type: 'string' },\r",
-                  "            postcode: { type: ['string', 'null'] },\r",
-                  "            phone: { type: ['integer', 'null'] },\r",
-                  "            dob: {\r",
-                  "                type: 'string',\r",
-                  "                pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$'\r",
-                  "            },\r",
-                  "            email: { type: 'string', format: 'email' },\r",
-                  "            password: { type: 'string' },\r",
-                  "            role: { type: 'string', enum: ['user', 'admin'] },\r",
-                  "            enabled: { type: 'integer' },\r",
-                  "            failed_login_attempts: { type: 'integer' }\r",
-                  "        },\r",
-                  "        required: [\r",
-                  "            'id', 'first_name', 'last_name', 'address', 'city', 'state', 'country',\r",
-                  "            'postcode', 'phone', 'dob', 'email', 'password', 'role', 'enabled', 'failed_login_attempts'\r",
-                  "        ],\r",
-                  "        additionalProperties: false\r",
-                  "    };\r",
-                  "\r",
-                  "    pm.test(`[${data.testCaseId}] Each user object matches schema`, function () {\r",
-                  "        jsonData.data.forEach((user) => {\r",
-                  "            pm.expect(user, `User with id ${user.id} failed schema`).to.have.jsonSchema(userSchema);\r",
-                  "            pm.collectionVariables.set(\"userId\", user.id);\r",
-                  "        });\r",
-                  "    });\r",
-                  "}\r",
-                  "\r",
-                  "// 6. Nếu test case yêu cầu check expected users\r",
-                  "if (data.checkExpectedUsers === true) {\r",
-                  "    pm.test(`[${data.testCaseId}] All expected users are returned by API`, function () {\r",
-                  "        let expectedUsersStr = pm.collectionVariables.get(\"expectedUsers\");\r",
-                  "\r",
-                  "        pm.expect(expectedUsersStr, \"Missing expectedUsers in collection variables\").to.not.be.undefined;\r",
-                  "        pm.expect(expectedUsersStr, \"expectedUsers is empty\").to.not.be.empty;\r",
-                  "\r",
-                  "        const expectedUsers = JSON.parse(expectedUsersStr);\r",
-                  "        const actualUsers = jsonData.data || [];\r",
-                  "\r",
-                  "        expectedUsers.forEach(expected => {\r",
-                  "            const match = actualUsers.find(actual =>\r",
-                  "                actual.id === expected.id &&\r",
-                  "                actual.email === expected.email &&\r",
-                  "                actual.first_name === expected.first_name &&\r",
-                  "                actual.last_name === expected.last_name\r",
-                  "            );\r",
-                  "\r",
-                  "            pm.expect(match, `Response missing or mismatched userId: ${expected.id}`).to.not.be.undefined;\r",
-                  "        });\r",
-                  "    });\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "const expectedUser = [\r",
-                  "    {\"id\":1,\"email\":\"admin@practicesoftwaretesting.com\",\"first_name\":\"John\",\"last_name\":\"Doe\"},\r",
-                  "    {\"id\":2,\"email\":\"customer@practicesoftwaretesting.com\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"},\r",
-                  "    {\"id\":3,\"email\":\"customer2@practicesoftwaretesting.com\",\"first_name\":\"Jack\",\"last_name\":\"Howe\"}\r",
-                  "]\r",
-                  "pm.collectionVariables.set(\"expectedUser\", expectedUser);\r",
-                  "\r",
-                  "let authType = data.authType;\r",
-                  "\r",
-                  "if (authType === \"admin\" || authType === \"customer\") {\r",
-                  "    let email = authType === \"admin\" ? \"admin@practicesoftwaretesting.com\" : \"customer@practicesoftwaretesting.com\";\r",
-                  "    let password = \"welcome01\";\r",
-                  "\r",
-                  "    pm.sendRequest({\r",
-                  "        url: pm.collectionVariables.get(\"baseUrl\") + \"/users/login\",\r",
-                  "        method: 'POST',\r",
-                  "        header: { 'Content-Type': 'application/json' },\r",
-                  "        body: {\r",
-                  "            mode: 'raw',\r",
-                  "            raw: JSON.stringify({ email, password })\r",
-                  "        }\r",
-                  "    }, function (err, res) {\r",
-                  "        if (!err && res.code === 200) {\r",
-                  "            let token = res.json().access_token;\r",
-                  "            pm.collectionVariables.set(\"access_token\", token);\r",
-                  "        }\r",
-                  "    });\r",
-                  "} else {\r",
-                  "    pm.collectionVariables.unset(\"access_token\");\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true,
-            "disabledSystemHeaders": {}
-          },
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users{{queryParams}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users{{queryParams}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "/users/login",
-      "item": [
-        {
-          "name": "Login",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const jsonData = pm.response.json();\r",
-                  "\r",
-                  "console.log(\"Running Test Case:\", data.testCaseId);\r",
-                  "\r",
-                  "pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
-                  "    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
-                  "});\r",
-                  "\r",
-                  "if (data.checkToken === true) {\r",
-                  "    pm.test(`[${data.testCaseId}] Response contains valid access_token`, function () {\r",
-                  "        pm.expect(jsonData).to.have.property(\"access_token\").that.is.a(\"string\");\r",
-                  "        pm.expect(jsonData.token_type).to.eql(\"bearer\");\r",
-                  "        pm.expect(jsonData.expires_in).to.eql(120);\r",
-                  "    });\r",
-                  "}\r",
-                  "\r",
-                  "// Nếu có expectedError → kiểm tra error message (tên test kèm error)\r",
-                  "if (data.expectedError && data.expectedError.trim() !== \"\") {\r",
-                  "    pm.test(`[${data.testCaseId}] Error message is \"${data.expectedError}\"`, function () {\r",
-                  "        pm.expect(jsonData.error).to.eql(data.expectedError);\r",
-                  "    });\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"password\": \"{{password}}\"\r\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/login",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "login"]
-            }
-          },
-          "response": []
-        }
-      ]
-    },
-    {
-      "name": "/users/{userId}",
-      "item": [
-        {
-          "name": "Get user by id",
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "const method = data.method || \"GET\";\r",
-                  "if (method !== \"GET\") return;\r",
-                  "const jsonData = pm.response.json();\r",
-                  "\r",
-                  "pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
-                  "    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
-                  "});\r",
-                  "\r",
-                  "\r",
-                  "if (data.checkFields === true) {\r",
-                  "    console.log(data.checkFields);\r",
-                  "    const userSchema = {\r",
-                  "        type: 'object',\r",
-                  "        properties: {\r",
-                  "            id: {\r",
-                  "                type: 'integer'\r",
-                  "            },\r",
-                  "            first_name: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            last_name: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            address: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            city: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            state: {\r",
-                  "                type: ['string', 'null']\r",
-                  "            },\r",
-                  "            country: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            postcode: {\r",
-                  "                type: ['string', 'null']\r",
-                  "            },\r",
-                  "            phone: {\r",
-                  "                type: ['integer', 'null']\r",
-                  "            },\r",
-                  "            dob: {\r",
-                  "                type: 'string',\r",
-                  "                pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$'  // YYYY-MM-DD\r",
-                  "            },\r",
-                  "            email: {\r",
-                  "                type: 'string',\r",
-                  "                format: 'email'\r",
-                  "            },\r",
-                  "            password: {\r",
-                  "                type: 'string'\r",
-                  "            },\r",
-                  "            role: {\r",
-                  "                type: 'string',\r",
-                  "                enum: ['user', 'admin']\r",
-                  "            }\r",
-                  "        },\r",
-                  "        required: ['id', 'first_name', 'last_name', 'address', 'city', 'state', 'country', 'postcode', 'phone', 'dob', 'email', 'password', 'role'],\r",
-                  "        additionalProperties: false\r",
-                  "    };\r",
-                  "\r",
-                  "    pm.test(`${data.testCaseId}: Valid user response`, function() {\r",
-                  "        pm.expect(jsonData).to.have.jsonSchema(userSchema);\r",
-                  "    })\r",
-                  "}\r",
-                  "\r",
-                  "if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
-                  "    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
-                  "        let msg = jsonData.message || jsonData.error;\r",
-                  "        pm.expect(msg).to.eql(data.expectedMessage);\r",
-                  "    });\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [
-                  "let authType = data.authType;\r",
-                  "\r",
-                  "if (authType === \"admin\" || authType === \"customer\") {\r",
-                  "    let email = authType === \"admin\" ? \"admin@practicesoftwaretesting.com\" : \"customer@practicesoftwaretesting.com\";\r",
-                  "    let password = \"welcome01\";\r",
-                  "\r",
-                  "    pm.sendRequest({\r",
-                  "        url: pm.collectionVariables.get(\"baseUrl\") + \"/users/login\",\r",
-                  "        method: 'POST',\r",
-                  "        header: { 'Content-Type': 'application/json' },\r",
-                  "        body: {\r",
-                  "            mode: 'raw',\r",
-                  "            raw: JSON.stringify({ email, password })\r",
-                  "        }\r",
-                  "    }, function (err, res) {\r",
-                  "        if (!err && res.code === 200) {\r",
-                  "            let token = res.json().access_token;\r",
-                  "            pm.collectionVariables.set(\"access_token\", token);\r",
-                  "        }\r",
-                  "    });\r",
-                  "} else {\r",
-                  "    pm.collectionVariables.unset(\"access_token\");\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "protocolProfileBehavior": {
-            "disableBodyPruning": true,
-            "disabledSystemHeaders": {}
-          },
-          "request": {
-            "auth": {
-              "type": "bearer",
-              "bearer": [
-                {
-                  "key": "token",
-                  "value": "{{access_token}}",
-                  "type": "string"
-                }
-              ]
-            },
-            "method": "GET",
-            "header": [],
-            "body": {
-              "mode": "raw",
-              "raw": "",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}"]
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "Get user by id (POST)",
-          "event": [
-            {
-              "listen": "prerequest",
-              "script": {
-                "exec": [""],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            },
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "let method = data.method || \"GET\";\r",
-                  "\r",
-                  "// Nếu không phải POST thì bỏ qua toàn bộ test\r",
-                  "if (method !== \"POST\") {\r",
-                  "    return;\r",
-                  "}\r",
-                  "\r",
-                  "console.log(method);\r",
-                  "\r",
-                  "const jsonData = pm.response.json();\r",
-                  "\r",
-                  "pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
-                  "    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
-                  "});\r",
-                  "\r",
-                  "if (data.checkFields && data.checkFields.toLowerCase() === \"true\") {\r",
-                  "    const userSchema = {\r",
-                  "        type: 'object',\r",
-                  "        properties: {\r",
-                  "            id: { type: 'integer' },\r",
-                  "            first_name: { type: 'string' },\r",
-                  "            last_name: { type: 'string' },\r",
-                  "            address: { type: 'string' },\r",
-                  "            city: { type: 'string' },\r",
-                  "            state: { type: ['string', 'null'] },\r",
-                  "            country: { type: 'string' },\r",
-                  "            postcode: { type: ['string', 'null'] },\r",
-                  "            phone: { type: ['integer', 'null'] },\r",
-                  "            dob: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$' }, // YYYY-MM-DD\r",
-                  "            email: { type: 'string', format: 'email' },\r",
-                  "            password: { type: 'string' },\r",
-                  "            role: { type: 'string', enum: ['user', 'admin'] }\r",
-                  "        },\r",
-                  "        required: [\r",
-                  "            'id', 'first_name', 'last_name', 'address', 'city',\r",
-                  "            'state', 'country', 'postcode', 'phone', 'dob',\r",
-                  "            'email', 'password', 'role'\r",
-                  "        ],\r",
-                  "        additionalProperties: false\r",
-                  "    };\r",
-                  "\r",
-                  "    pm.test(`${data.testCaseId}: Valid user response`, function() {\r",
-                  "        pm.expect(jsonData).to.have.jsonSchema(userSchema);\r",
-                  "    });\r",
-                  "}\r",
-                  "\r",
-                  "if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
-                  "    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
-                  "        let msg = jsonData.message || jsonData.error;\r",
-                  "        pm.expect(msg).to.eql(data.expectedMessage);\r",
-                  "    });\r",
-                  "}\r",
-                  ""
-                ],
-                "type": "text/javascript",
-                "packages": {}
-              }
-            }
-          ],
-          "request": {
-            "method": "POST",
-            "header": [],
-            "url": {
-              "raw": "{{baseUrl}}/users/{{userId}}",
-              "host": ["{{baseUrl}}"],
-              "path": ["users", "{{userId}}"]
-            }
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "exec": [""]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "packages": {},
-        "exec": [""]
-      }
-    }
-  ],
-  "variable": [
-    {
-      "key": "baseUrl",
-      "value": "localhost:8091",
-      "type": "string"
-    },
-    {
-      "key": "adminEmail",
-      "value": "\tadmin@practicesoftwaretesting.com",
-      "type": "string"
-    },
-    {
-      "key": "password",
-      "value": "welcome01",
-      "type": "string"
-    },
-    {
-      "key": "expectedUsers",
-      "value": ""
-    },
-    {
-      "key": "userId",
-      "value": ""
-    },
-    {
-      "key": "expectedUser",
-      "value": "[\n  {\n    \"id\": 1,\n    \"email\": \"admin@practicesoftwaretesting.com\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\"\n  },\n  {\n    \"id\": 2,\n    \"email\": \"customer@practicesoftwaretesting.com\",\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\"\n  },\n  {\n    \"id\": 3,\n    \"email\": \"customer2@practicesoftwaretesting.com\",\n    \"first_name\": \"Jack\",\n    \"last_name\": \"Howe\"\n  }\n]\n",
-      "type": "string"
-    },
-    {
-      "key": "admin_access_token",
-      "value": "accessToken",
-      "type": "string"
-    },
-    {
-      "key": "customerEmail",
-      "value": "customer@practicesoftwaretesting.com",
-      "type": "string"
-    },
-    {
-      "key": "customer_access_token",
-      "value": ""
-    },
-    {
-      "key": "access_token",
-      "value": ""
-    }
-  ]
+	"info": {
+		"_postman_id": "2e24f68c-c42c-477b-8218-c919fc02b94e",
+		"name": "API Testing",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "28922640"
+	},
+	"item": [
+		{
+			"name": "/users",
+			"item": [
+				{
+					"name": "Get all users",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"\r",
+									"// 1. Kiểm tra status code\r",
+									"pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
+									"    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
+									"});\r",
+									"\r",
+									"// 2. Kiểm tra message nếu có\r",
+									"if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
+									"    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
+									"        let msg = jsonData.message || jsonData.error;\r",
+									"        pm.expect(msg).to.eql(data.expectedMessage);\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// 3. Kiểm tra pagination metadata nếu checkPagination = true\r",
+									"if (data.checkPagination === true) {\r",
+									"    pm.test(`[${data.testCaseId}] Has pagination metadata`, function () {\r",
+									"        pm.expect(jsonData).to.have.property(\"current_page\");\r",
+									"        pm.expect(jsonData).to.have.property(\"last_page\");\r",
+									"        pm.expect(jsonData).to.have.property(\"per_page\");\r",
+									"        pm.expect(jsonData).to.have.property(\"total\");\r",
+									"        pm.expect(jsonData).to.have.property(\"data\").that.is.an(\"array\");\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// 4. Kiểm tra data array nếu checkDataArray = true/false\r",
+									"if (data.checkDataArray === true) {\r",
+									"    pm.test(`[${data.testCaseId}] Data array exist`, function () {\r",
+									"        pm.expect(jsonData.data.length).to.be.greaterThanOrEqual(0);\r",
+									"    });\r",
+									"} \r",
+									"\r",
+									"// 5. Nếu data không rỗng → check schema cho từng user\r",
+									"if (Array.isArray(jsonData.data) && jsonData.data.length > 0) {\r",
+									"    const userSchema = {\r",
+									"        type: 'object',\r",
+									"        properties: {\r",
+									"            id: { type: 'integer' },\r",
+									"            first_name: { type: 'string' },\r",
+									"            last_name: { type: 'string' },\r",
+									"            address: { type: 'string' },\r",
+									"            city: { type: 'string' },\r",
+									"            state: { type: ['string', 'null'] },\r",
+									"            country: { type: 'string' },\r",
+									"            postcode: { type: ['string', 'null'] },\r",
+									"            phone: { type: ['integer', 'null'] },\r",
+									"            dob: {\r",
+									"                type: 'string',\r",
+									"                pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$'\r",
+									"            },\r",
+									"            email: { type: 'string', format: 'email' },\r",
+									"            password: { type: 'string' },\r",
+									"            role: { type: 'string', enum: ['user', 'admin'] },\r",
+									"            enabled: { type: 'integer' },\r",
+									"            failed_login_attempts: { type: 'integer' }\r",
+									"        },\r",
+									"        required: [\r",
+									"            'id', 'first_name', 'last_name', 'address', 'city', 'state', 'country',\r",
+									"            'postcode', 'phone', 'dob', 'email', 'password', 'role', 'enabled', 'failed_login_attempts'\r",
+									"        ],\r",
+									"        additionalProperties: false\r",
+									"    };\r",
+									"\r",
+									"    pm.test(`[${data.testCaseId}] Each user object matches schema`, function () {\r",
+									"        jsonData.data.forEach((user) => {\r",
+									"            pm.expect(user, `User with id ${user.id} failed schema`).to.have.jsonSchema(userSchema);\r",
+									"            pm.collectionVariables.set(\"userId\", user.id);\r",
+									"        });\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// 6. Nếu test case yêu cầu check expected users\r",
+									"if (data.checkExpectedUsers === true) {\r",
+									"    pm.test(`[${data.testCaseId}] All expected users are returned by API`, function () {\r",
+									"        let expectedUsersStr = pm.collectionVariables.get(\"expectedUsers\");\r",
+									"\r",
+									"        pm.expect(expectedUsersStr, \"Missing expectedUsers in collection variables\").to.not.be.undefined;\r",
+									"        pm.expect(expectedUsersStr, \"expectedUsers is empty\").to.not.be.empty;\r",
+									"\r",
+									"        const expectedUsers = JSON.parse(expectedUsersStr);\r",
+									"        const actualUsers = jsonData.data || [];\r",
+									"\r",
+									"        expectedUsers.forEach(expected => {\r",
+									"            const match = actualUsers.find(actual =>\r",
+									"                actual.id === expected.id &&\r",
+									"                actual.email === expected.email &&\r",
+									"                actual.first_name === expected.first_name &&\r",
+									"                actual.last_name === expected.last_name\r",
+									"            );\r",
+									"\r",
+									"            pm.expect(match, `Response missing or mismatched userId: ${expected.id}`).to.not.be.undefined;\r",
+									"        });\r",
+									"    });\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const expectedUser = [\r",
+									"    {\"id\":1,\"email\":\"admin@practicesoftwaretesting.com\",\"first_name\":\"John\",\"last_name\":\"Doe\"},\r",
+									"    {\"id\":2,\"email\":\"customer@practicesoftwaretesting.com\",\"first_name\":\"Jane\",\"last_name\":\"Doe\"},\r",
+									"    {\"id\":3,\"email\":\"customer2@practicesoftwaretesting.com\",\"first_name\":\"Jack\",\"last_name\":\"Howe\"}\r",
+									"]\r",
+									"pm.collectionVariables.set(\"expectedUser\", expectedUser);\r",
+									"\r",
+									"let authType = data.authType;\r",
+									"\r",
+									"if (authType === \"admin\" || authType === \"customer\") {\r",
+									"    let email = authType === \"admin\" ? \"admin@practicesoftwaretesting.com\" : \"customer@practicesoftwaretesting.com\";\r",
+									"    let password = \"welcome01\";\r",
+									"\r",
+									"    pm.sendRequest({\r",
+									"        url: pm.collectionVariables.get(\"baseUrl\") + \"/users/login\",\r",
+									"        method: 'POST',\r",
+									"        header: { 'Content-Type': 'application/json' },\r",
+									"        body: {\r",
+									"            mode: 'raw',\r",
+									"            raw: JSON.stringify({ email, password })\r",
+									"        }\r",
+									"    }, function (err, res) {\r",
+									"        if (!err && res.code === 200) {\r",
+									"            let token = res.json().access_token;\r",
+									"            pm.collectionVariables.set(\"access_token\", token);\r",
+									"        }\r",
+									"    });\r",
+									"} else {\r",
+									"    pm.collectionVariables.unset(\"access_token\");\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true,
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users{{queryParams}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users{{queryParams}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "/users/login",
+			"item": [
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const jsonData = pm.response.json();\r",
+									"\r",
+									"console.log(\"Running Test Case:\", data.testCaseId);\r",
+									"\r",
+									"pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
+									"    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
+									"});\r",
+									"\r",
+									"if (data.checkToken === true) {\r",
+									"    pm.test(`[${data.testCaseId}] Response contains valid access_token`, function () {\r",
+									"        pm.expect(jsonData).to.have.property(\"access_token\").that.is.a(\"string\");\r",
+									"        pm.expect(jsonData.token_type).to.eql(\"bearer\");\r",
+									"        pm.expect(jsonData.expires_in).to.eql(120);\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"// Nếu có expectedError → kiểm tra error message (tên test kèm error)\r",
+									"if (data.expectedError && data.expectedError.trim() !== \"\") {\r",
+									"    pm.test(`[${data.testCaseId}] Error message is \"${data.expectedError}\"`, function () {\r",
+									"        pm.expect(jsonData.error).to.eql(data.expectedError);\r",
+									"    });\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"email\": \"{{email}}\",\r\n    \"password\": \"{{password}}\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "/users/{userId}",
+			"item": [
+				{
+					"name": "Get user by id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const method = data.method || \"GET\";\r",
+									"if (method !== \"GET\") return;\r",
+									"const jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
+									"    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
+									"});\r",
+									"\r",
+									"\r",
+									"if (data.checkFields === true) {\r",
+									"    console.log(data.checkFields);\r",
+									"    const userSchema = {\r",
+									"        type: 'object',\r",
+									"        properties: {\r",
+									"            id: {\r",
+									"                type: 'integer'\r",
+									"            },\r",
+									"            first_name: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            last_name: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            address: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            city: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            state: {\r",
+									"                type: ['string', 'null']\r",
+									"            },\r",
+									"            country: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            postcode: {\r",
+									"                type: ['string', 'null']\r",
+									"            },\r",
+									"            phone: {\r",
+									"                type: ['integer', 'null']\r",
+									"            },\r",
+									"            dob: {\r",
+									"                type: 'string',\r",
+									"                pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$'  // YYYY-MM-DD\r",
+									"            },\r",
+									"            email: {\r",
+									"                type: 'string',\r",
+									"                format: 'email'\r",
+									"            },\r",
+									"            password: {\r",
+									"                type: 'string'\r",
+									"            },\r",
+									"            role: {\r",
+									"                type: 'string',\r",
+									"                enum: ['user', 'admin']\r",
+									"            }\r",
+									"        },\r",
+									"        required: ['id', 'first_name', 'last_name', 'address', 'city', 'state', 'country', 'postcode', 'phone', 'dob', 'email', 'password', 'role'],\r",
+									"        additionalProperties: false\r",
+									"    };\r",
+									"\r",
+									"    pm.test(`${data.testCaseId}: Valid user response`, function() {\r",
+									"        pm.expect(jsonData).to.have.jsonSchema(userSchema);\r",
+									"    })\r",
+									"}\r",
+									"\r",
+									"if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
+									"    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
+									"        let msg = jsonData.message || jsonData.error;\r",
+									"        pm.expect(msg).to.eql(data.expectedMessage);\r",
+									"    });\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"let authType = data.authType;\r",
+									"\r",
+									"if (authType === \"admin\" || authType === \"customer\") {\r",
+									"    let email = authType === \"admin\" ? \"admin@practicesoftwaretesting.com\" : \"customer@practicesoftwaretesting.com\";\r",
+									"    let password = \"welcome01\";\r",
+									"\r",
+									"    pm.sendRequest({\r",
+									"        url: pm.collectionVariables.get(\"baseUrl\") + \"/users/login\",\r",
+									"        method: 'POST',\r",
+									"        header: { 'Content-Type': 'application/json' },\r",
+									"        body: {\r",
+									"            mode: 'raw',\r",
+									"            raw: JSON.stringify({ email, password })\r",
+									"        }\r",
+									"    }, function (err, res) {\r",
+									"        if (!err && res.code === 200) {\r",
+									"            let token = res.json().access_token;\r",
+									"            pm.collectionVariables.set(\"access_token\", token);\r",
+									"        }\r",
+									"    });\r",
+									"} else {\r",
+									"    pm.collectionVariables.unset(\"access_token\");\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true,
+						"disabledSystemHeaders": {}
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get user by id (POST)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"let method = data.method || \"GET\";\r",
+									"\r",
+									"// Nếu không phải POST thì bỏ qua toàn bộ test\r",
+									"if (method !== \"POST\") {\r",
+									"    return;\r",
+									"}\r",
+									"\r",
+									"console.log(method);\r",
+									"\r",
+									"const jsonData = pm.response.json();\r",
+									"\r",
+									"pm.test(`[${data.testCaseId}] Status code is ${data.expectedStatus}`, function () {\r",
+									"    pm.response.to.have.status(parseInt(data.expectedStatus));\r",
+									"});\r",
+									"\r",
+									"if (data.checkFields && data.checkFields.toLowerCase() === \"true\") {\r",
+									"    const userSchema = {\r",
+									"        type: 'object',\r",
+									"        properties: {\r",
+									"            id: { type: 'integer' },\r",
+									"            first_name: { type: 'string' },\r",
+									"            last_name: { type: 'string' },\r",
+									"            address: { type: 'string' },\r",
+									"            city: { type: 'string' },\r",
+									"            state: { type: ['string', 'null'] },\r",
+									"            country: { type: 'string' },\r",
+									"            postcode: { type: ['string', 'null'] },\r",
+									"            phone: { type: ['integer', 'null'] },\r",
+									"            dob: { type: 'string', pattern: '^\\\\d{4}-\\\\d{2}-\\\\d{2}$' }, // YYYY-MM-DD\r",
+									"            email: { type: 'string', format: 'email' },\r",
+									"            password: { type: 'string' },\r",
+									"            role: { type: 'string', enum: ['user', 'admin'] }\r",
+									"        },\r",
+									"        required: [\r",
+									"            'id', 'first_name', 'last_name', 'address', 'city',\r",
+									"            'state', 'country', 'postcode', 'phone', 'dob',\r",
+									"            'email', 'password', 'role'\r",
+									"        ],\r",
+									"        additionalProperties: false\r",
+									"    };\r",
+									"\r",
+									"    pm.test(`${data.testCaseId}: Valid user response`, function() {\r",
+									"        pm.expect(jsonData).to.have.jsonSchema(userSchema);\r",
+									"    });\r",
+									"}\r",
+									"\r",
+									"if (data.expectedMessage && data.expectedMessage.trim() !== \"\") {\r",
+									"    pm.test(`[${data.testCaseId}] Message is \"${data.expectedMessage}\"`, function () {\r",
+									"        let msg = jsonData.message || jsonData.error;\r",
+									"        pm.expect(msg).to.eql(data.expectedMessage);\r",
+									"    });\r",
+									"}\r",
+									""
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/users/{{userId}}",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"users",
+								"{{userId}}"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "https://api-with-bugs.practicesoftwaretesting.com",
+			"type": "string"
+		},
+		{
+			"key": "adminEmail",
+			"value": "\tadmin@practicesoftwaretesting.com",
+			"type": "string"
+		},
+		{
+			"key": "password",
+			"value": "welcome01",
+			"type": "string"
+		},
+		{
+			"key": "expectedUsers",
+			"value": ""
+		},
+		{
+			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "expectedUser",
+			"value": "[\n  {\n    \"id\": 1,\n    \"email\": \"admin@practicesoftwaretesting.com\",\n    \"first_name\": \"John\",\n    \"last_name\": \"Doe\"\n  },\n  {\n    \"id\": 2,\n    \"email\": \"customer@practicesoftwaretesting.com\",\n    \"first_name\": \"Jane\",\n    \"last_name\": \"Doe\"\n  },\n  {\n    \"id\": 3,\n    \"email\": \"customer2@practicesoftwaretesting.com\",\n    \"first_name\": \"Jack\",\n    \"last_name\": \"Howe\"\n  }\n]\n",
+			"type": "string"
+		},
+		{
+			"key": "admin_access_token",
+			"value": "accessToken",
+			"type": "string"
+		},
+		{
+			"key": "customerEmail",
+			"value": "customer@practicesoftwaretesting.com",
+			"type": "string"
+		},
+		{
+			"key": "customer_access_token",
+			"value": ""
+		},
+		{
+			"key": "access_token",
+			"value": ""
+		}
+	]
 }
