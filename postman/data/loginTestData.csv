@@ -1,0 +1,7 @@
+testCaseId,email,password,expectedStatus,expectedError,checkToken
+TC_USER_08,admin@practicesoftwaretesting.com,welcome01,200,,true
+TC_USER_09,customer@practicesoftwaretesting.com,welcome01,200,,true
+TC_USER_10,customer@practicesoftwaretesting.com,wrongpass,401,Unauthorized,false
+TC_USER_11,wrongemail@practicesoftwaretesting.com,welcome01,401,Unauthorized,false
+TC_USER_12,,welcome01,401,Invalid login request,false
+TC_USER_13,customer@practicesoftwaretesting.com,,401,Invalid login request,false

@@ -1,0 +1,8 @@
+testCaseId,method,url,queryParams,authType,expectedStatus,expectedMessage,checkPagination,checkDataArray,checkExpectedUsers 
+TC_USER_01,GET,/users,,admin,200,,true,true,true
+TC_USER_02,GET,/users,,customer,403,Forbidden,false,false,false
+TC_USER_03,GET,/users,,none,401,Unauthorized,false,false,false
+TC_USER_04,GET,/users,"?page=1",admin,200,,true,true,true
+TC_USER_05,GET,/users,"?page=-1",admin,200,,true,true,true
+TC_USER_06,GET,/users,"?page=2",admin,200,,true,false,false
+TC_USER_07,GET,/users,"?page=0",admin,200,,true,true,true

@@ -1,0 +1,6 @@
+testCaseId,method,userId,authType,expectedStatus,expectedMessage,checkFields
+TC_USER_14,GET,1,admin,200,,true
+TC_USER_15,GET,1,none,401,Unauthorized,false
+TC_USER_16,GET,12,admin,404,Requested item not found,false
+TC_USER_17,POST,1,admin,405,Method is not allowed for the requested route,false
+TC_USER_18,GET,1,customer,403,You are not authorized to view this user.,false

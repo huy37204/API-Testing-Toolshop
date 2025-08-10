@@ -25,16 +25,14 @@ jobs:
       - name: Run /users tests
         run: |
           newman run collections/API_Testing.postman_collection.json \
-            -e environments/API_Testing.getAllUsers_Huy(1).csv \
             --folder "/users" \
-            --iteration-data data/users_data.json \
+            --iteration-data data/getAllUsers.csv \
             --reporters cli,json,html \
             --reporter-html-export reports/users_report.html
 
       - name: Run /users/login tests
         run: |
           newman run collections/API_Testing.postman_collection.json \
-            -e environments/API_Testing.postman_environment.json \
             --folder "/users/login" \
             --iteration-data data/loginTestData.csv \
             --reporters cli,json,html \
@@ -43,7 +41,6 @@ jobs:
       - name: Run /users/{userId} tests
         run: |
           newman run collections/API_Testing.postman_collection.json \
-            -e environments/API_Testing.postman_environment.json \
             --folder "/users/{userId}" \
             --iteration-data data/getUserByIdData.csv \
             --reporters cli,json,html \
